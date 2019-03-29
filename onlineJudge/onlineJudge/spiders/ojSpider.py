@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+'''
+Create on 2019/1/23
+@author: Max_Lyu
+'''
 import scrapy
 import json
 from onlineJudge.items import OnlinejudgeItem
