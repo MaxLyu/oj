@@ -7,81 +7,88 @@
 <p>　　在动手写代码之前，先分析一下网页结构。网站是通过动态加载的，数据通过 json&nbsp;文件加载。</p>
 <p><img src="https://img2018.cnblogs.com/blog/1458123/201902/1458123-20190214223735371-940491986.png" alt="" /></p>
 <p>&nbsp;</p>
-<p>　　1、明确要爬取的目标： http://oj.dgut.edu.cn/problems&nbsp;网站里的题目，难度，提交量，通过率。在查找&nbsp;json 的时候发现只有通过数，那么通过率就要自己计算。</p>
+<p>　　1、明确要爬取的目标： http://oj.dgut.edu.cn/problems&nbsp; 网站里的题目，难度，提交量，通过率。在查找&nbsp;json 的时候发现只有通过数，那么通过率就要自己计算。</p>
 <p>　　2、打开 onlineJudge 目录下的 items.py&nbsp;写下如下代码：</p>
 <div class="cnblogs_code">
 <pre><span style="color: #0000ff;">class</span><span style="color: #000000;"> OnlinejudgeItem(scrapy.Item):
 
-    id </span>= scrapy.Field()                     <span style="color: #008000;">#</span><span style="color: #008000;"> 题目编号</span>
-    title = scrapy.Field()                  <span style="color: #008000;">#</span><span style="color: #008000;"> 标题</span>
-    difficulty = scrapy.Field()             <span style="color: #008000;">#</span><span style="color: #008000;"> 难度</span>
-    submissionNo = scrapy.Field()      　　　<span style="color: #008000;">#</span><span style="color: #008000;"> 提交量</span>
-    acceptedNo = scrapy.Field()         　　<span style="color: #008000;">#</span><span style="color: #008000;"> 正确数</span>
-    passingRate = scrapy.Field()           <span style="color: #008000;">#</span><span style="color: #008000;"> 正确率</span></pre>
+    id </span>= scrapy.Field()                    
+    title = scrapy.Field()                 
+    difficulty = scrapy.Field()            
+    submissionNo = scrapy.Field()      　　　
+    acceptedNo = scrapy.Field()         　
+    passingRate = scrapy.Field()           
 </div>
 <p><strong><span style="font-size: 15px;">三、制作爬虫</span></strong></p>
 <p>　　1、在当前目录下输入命令：<code>scrapy genspider oj "oj.dgut.edu.cn" （其中 oj 是爬虫的名字，"oj.dgut.edu.cn"算是一个约束，规定一个域名）</code></p>
 <p>　　2、打开 onlineJudge/spiders&nbsp;下的&nbsp;ojSpider.py ，增加或修改代码为：</p>
 <div class="cnblogs_code">
-<pre><span style="color: #0000ff;">import</span><span style="color: #000000;"> scrapy
-</span><span style="color: #0000ff;">import</span><span style="color: #000000;"> json
-</span><span style="color: #0000ff;">from</span> onlineJudge.items <span style="color: #0000ff;">import</span><span style="color: #000000;"> OnlinejudgeItem
+<pre>
+<code>
+import scrapy
+import json
+from onlineJudge.items import OnlinejudgeItem
 
-</span><span style="color: #0000ff;">class</span><span style="color: #000000;"> OjSpider(scrapy.Spider):
-    name </span>= <span style="color: #800000;">'</span><span style="color: #800000;">oj</span><span style="color: #800000;">'</span><span style="color: #000000;"><span style="color: #008000;">        # 爬虫的名字</span>
-    allowed_domains </span>= [<span style="color: #800000;">'</span><span style="color: #800000;">oj.dgut.edu.cn</span><span style="color: #800000;">'</span><span style="color: #000000;">]　　　　　<span style="color: #008000;"># 域名范围</span>
-    offset </span>=<span style="color: #000000;"> 0
-    url </span>= <span style="color: #800000;">'</span><span style="color: #800000;">http://oj.dgut.edu.cn/api/xproblem/?limit=20&amp;offset=</span><span style="color: #800000;">'</span><span style="color: #000000;">
-    start_urls </span>= [url +<span style="color: #000000;"> str(offset)]　　　　　　　<span style="color: #008000;"># 爬取的URL元祖/列表
+class OjSpider(scrapy.Spider):
+    name = 'oj'        # 爬虫的名字
+    allowed_domains = ['oj.dgut.edu.cn']　　　　　# 域名范围
+    offset = 0
+    url = 'http://oj.dgut.edu.cn/api/xproblem/?limit=20&offset='
+    start_urls = [url + str(offset)]　　　　　　　# 爬取的URL元祖/列表
 
-    </span></span><span style="color: #0000ff;">def</span><span style="color: #000000;"> parse(self, response):
-        data </span>= json.loads(response.text)[<span style="color: #800000;">'</span><span style="color: #800000;">data</span><span style="color: #800000;">'</span>][<span style="color: #800000;">'</span><span style="color: #800000;">results</span><span style="color: #800000;">'</span><span style="color: #000000;">]
-        </span><span style="color: #0000ff;">if</span><span style="color: #000000;"> len(data):
-            </span><span style="color: #0000ff;">for</span> i <span style="color: #0000ff;">in</span><span style="color: #000000;"> range(len(data)):
-                submissionNo </span>= data[i][<span style="color: #800000;">'</span><span style="color: #800000;">submission_number</span><span style="color: #800000;">'</span><span style="color: #000000;">]
-                acceptedNo </span>= data[i][<span style="color: #800000;">'</span><span style="color: #800000;">accepted_number</span><span style="color: #800000;">'</span><span style="color: #000000;">]
-                </span><span style="color: #0000ff;">try</span><span style="color: #000000;">:
-                    passingRate </span>= round((int(acceptedNo)/int(submissionNo)) * 100, 2<span style="color: #000000;">)
-                </span><span style="color: #0000ff;">except</span><span style="color: #000000;"> ZeroDivisionError as e:
-                    passingRate </span>=<span style="color: #000000;"> 0
+    def parse(self, response):
+        data = json.loads(response.text)['data']['results']
+        if len(data):
+            for i in range(len(data)):
+                submissionNo = data[i]['submission_number']
+                acceptedNo = data[i]['accepted_number']
+                try:
+                    passingRate = round((int(acceptedNo)/int(submissionNo)) * 100, 2)
+                except ZeroDivisionError as e:
+                    passingRate = 0
     
-                strPR </span>= str(passingRate) + <span style="color: #800000;">"</span><span style="color: #800000;">%</span><span style="color: #800000;">"</span><span style="color: #000000;">
+                strPR = str(passingRate) + "%"
     
-                item </span>=<span style="color: #000000;"> OnlinejudgeItem()
+                item = OnlinejudgeItem()
     
-                item[</span><span style="color: #800000;">'</span><span style="color: #800000;">id</span><span style="color: #800000;">'</span>] = data[i][<span style="color: #800000;">'</span><span style="color: #800000;">_id</span><span style="color: #800000;">'</span><span style="color: #000000;">]
-                item[</span><span style="color: #800000;">'</span><span style="color: #800000;">title</span><span style="color: #800000;">'</span>] = data[i][<span style="color: #800000;">'</span><span style="color: #800000;">title</span><span style="color: #800000;">'</span><span style="color: #000000;">]
-                item[</span><span style="color: #800000;">'</span><span style="color: #800000;">difficulty</span><span style="color: #800000;">'</span>] = data[i][<span style="color: #800000;">'</span><span style="color: #800000;">difficulty</span><span style="color: #800000;">'</span><span style="color: #000000;">]
-                item[</span><span style="color: #800000;">'</span><span style="color: #800000;">submissionNo</span><span style="color: #800000;">'</span>] =<span style="color: #000000;"> submissionNo
-                item[</span><span style="color: #800000;">'</span><span style="color: #800000;">acceptedNo</span><span style="color: #800000;">'</span>] =<span style="color: #000000;"> acceptedNo
-                item[</span><span style="color: #800000;">'</span><span style="color: #800000;">passingRate</span><span style="color: #800000;">'</span>] =<span style="color: #000000;"> strPR
+                item['id'] = data[i]['_id']
+                item['title'] = data[i]['title']
+                item['difficulty'] = data[i]['difficulty']
+                item['submissionNo'] = submissionNo
+                item['acceptedNo'] = acceptedNo
+                item['passingRate'] = strPR
     
-                </span><span style="color: #0000ff;">yield</span><span style="color: #000000;"> item
+                yield item
 
-                </span><span style="color: #0000ff;">print</span><span style="color: #000000;">(i)
-            self.offset </span>+= 20
-            <span style="color: #0000ff;">yield</span> scrapy.Request(self.url + str(self.offset), callback=<span style="color: #000000;">self.parse)
- </span></pre>
+                print(i)
+            self.offset += 20
+            yield scrapy.Request(self.url + str(self.offset), callback=self.parse)
+</code>
+</pre>
 </div>
 <p><span style="font-size: 15px;"><strong>四、存储数据</strong></span></p>
 <p>&nbsp; &nbsp; 1、打算将数据存储为&nbsp;excel&nbsp;文档，要先安装 openpyxl&nbsp;模块，通过 pip&nbsp;install openpyxl&nbsp;下载。</p>
 <p>&nbsp; &nbsp; 2、下载完成后，在&nbsp;pipelines.py&nbsp;中写入如下代码</p>
 <div class="cnblogs_code">
-<pre><span style="color: #0000ff;">from</span> openpyxl <span style="color: #0000ff;">import</span><span style="color: #000000;"> Workbook
+<pre>
+<code>
+from openpyxl import Workbook
 
-</span><span style="color: #0000ff;">class</span><span style="color: #000000;"> OnlinejudgePipeline(object):
+class OnlinejudgePipeline(object):
 
-    </span><span style="color: #0000ff;">def</span> <span style="color: #800080;">__init__</span><span style="color: #000000;">(self):
-        self.wb </span>=<span style="color: #000000;"> Workbook()
-        self.ws </span>= self.wb.active                <span style="color: #008000;">#</span><span style="color: #008000;"> 激活工作簿</span>
-        self.ws.append([<span style="color: #800000;">'</span><span style="color: #800000;">编号</span><span style="color: #800000;">'</span>, <span style="color: #800000;">'</span><span style="color: #800000;">标题</span><span style="color: #800000;">'</span>, <span style="color: #800000;">'</span><span style="color: #800000;">难度</span><span style="color: #800000;">'</span>, <span style="color: #800000;">'</span><span style="color: #800000;">提交量</span><span style="color: #800000;">'</span>, <span style="color: #800000;">'</span><span style="color: #800000;">正确数</span><span style="color: #800000;">'</span>, <span style="color: #800000;">'</span><span style="color: #800000;">正确率</span><span style="color: #800000;">'</span>])    <span style="color: #008000;">#</span><span style="color: #008000;"> 设置表头</span>
+    def __init__(self):
+        self.wb = Workbook()
+        self.ws = self.wb.active                # 激活工作簿
+        self.ws.append(['编号', '标题', '难度', '提交量', '正确数', '正确率'])    # 设置表头
 
-    <span style="color: #0000ff;">def</span><span style="color: #000000;"> process_item(self, item, spider):
-        line </span>= [item[<span style="color: #800000;">'</span><span style="color: #800000;">id</span><span style="color: #800000;">'</span>], item[<span style="color: #800000;">'</span><span style="color: #800000;">title</span><span style="color: #800000;">'</span>], item[<span style="color: #800000;">'</span><span style="color: #800000;">difficulty</span><span style="color: #800000;">'</span><span style="color: #000000;">],
-                item[</span><span style="color: #800000;">'</span><span style="color: #800000;">submissionNo</span><span style="color: #800000;">'</span>], item[<span style="color: #800000;">'</span><span style="color: #800000;">acceptedNo</span><span style="color: #800000;">'</span>], item[<span style="color: #800000;">'</span><span style="color: #800000;">passingRate</span><span style="color: #800000;">'</span><span style="color: #000000;">]]
+    def process_item(self, item, spider):
+        line = [item['id'], item['title'], item['difficulty'],
+                item['submissionNo'], item['acceptedNo'], item['passingRate']]
         self.ws.append(line)
-        self.wb.save(</span><span style="color: #800000;">'</span><span style="color: #800000;">oj.xlsx</span><span style="color: #800000;">'</span><span style="color: #000000;">)
-        </span><span style="color: #0000ff;">return</span> item</pre>
+        self.wb.save('oj.xlsx')
+        return item
+</code>
+</pre>
 </div>
 <p><span style="font-size: 15px;"><strong>五、设置 settings.py&nbsp;</strong></span></p>
 <p>&nbsp; &nbsp; 修改并增加代码：</p>
